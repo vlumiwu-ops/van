@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const multer = require('multer');
 const { execFile } = require('child_process');
 const fs = require('fs');
@@ -6,21 +7,21 @@ const path = require('path');
 const ffmpegPath = require('ffmpeg-static');
 
 const app = express();
+
+// Konfigurasi CORS resmi untuk mengizinkan frontend Anda
+app.use(cors({
+    origin: ['https://zzstudio.online'],
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
+
+// Penanganan eksplisit untuk preflight OPTIONS request
+app.options('*', cors());
+
 const upload = multer({ 
     dest: 'uploads/',
     limits: { fileSize: 50 * 1024 * 1024 } // Batas maksimal ukuran file 50MB
-});
-
-// Middleware CORS lengkap untuk menangani preflight request dari frontend
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(204);
-    }
-    next();
 });
 
 // Endpoint health check untuk monitoring Railway
