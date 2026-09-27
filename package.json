@@ -17,10 +17,72 @@
 }
 ```[cite: 13]
 
-2. **Simpan Perubahan:**
-   * Klik tombol hijau **Commit changes...** di bagian atas/bawah untuk menyimpan file yang diperbaiki.
+---
 
-3. **Deploy Ulang di Railway:**
-   * Kembali ke dashboard Railway Anda. Railway akan otomatis mendeteksi pembaruan dari GitHub dan mencoba melakukan *re-deploy* ulang dengan bersih.
+### 2. `server.js`
+```javascript
+const express = require('express');
+const multer = require('multer');
+const { exec } = require('child_process');
+const ffmpegPath = require('ffmpeg-static');
+const path = require('path');
+const fs = require('fs');
 
-Kabari saya jika proses *build*-nya sudah berjalan atau jika masih ada pesan error lain yang muncul!
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Konfigurasi penyimpanan Multer untuk file upload sementara
+const upload = multer({ dest: 'uploads/' });
+
+// Pastikan folder uploads dan outputs ada
+if (!fs.existsSync('uploads')) fs.mkdirSync('uploads');
+if (!fs.existsSync('outputs')) fs.mkdirSync('outputs');
+
+// Izinkan CORS agar bisa diakses dari frontend Netlify Anda
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    next();
+});
+
+app.use(express.static('public'));
+
+// Endpoint untuk proses konversi audio (menyesuaikan parameter kecepatan & gain sebelumnya)
+app.post('/convert', upload.single('audioFile'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).send("File audio tidak ditemukan.");
+    }
+
+    const inputPath = req.file.path;
+    const speed = req.body.speed || '2.3';
+    const gain = req.body.gain || '-6';
+    
+    // Format output diatur ke ogg sesuai script awal Anda, atau bisa disesuaikan
+    const outputFileName = `output_${Date.now()}.ogg`;
+    const outputPath = path.join('outputs', outputFileName);
+
+    // Perintah FFmpeg menggunakan ffmpeg-static yang kompatibel di Linux & Windows
+    const cmd = `"${ffmpegPath}" -i "${inputPath}" -filter:a "atempo=${speed},volume=${gain}dB" -c:a libvorbis "${outputPath}"`;
+
+    exec(cmd, (error, stdout, stderr) => {
+        // Hapus file input sementara
+        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+
+        if (error) {
+            console.error("Error FFmpeg:", error);
+            if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+            return res.status(500).send("Gagal memproses audio dengan FFmpeg.");
+        }
+
+        // Kirim file hasil konversi ke client
+        res.download(outputPath, 'bypassed_audio.ogg', (err) => {
+            if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+        });
+    });
+});
+
+app.listen(PORT, () => {
+    console.log(`Server backend berjalan di port ${PORT}`);
+});
+```[cite: 15]
