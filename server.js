@@ -8,10 +8,16 @@ const ffmpegPath = require('ffmpeg-static');
 const app = express();
 const upload = multer({ dest: 'uploads/' });
 
-// Izinkan CORS agar bisa diakses dari web frontend Anda
+// Perbaikan CORS menyeluruh agar frontend bisa terhubung
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    // Tangani preflight request OPTIONS secara langsung
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
     next();
 });
 
