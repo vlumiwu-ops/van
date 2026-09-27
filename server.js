@@ -3,6 +3,7 @@ const multer = require('multer');
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const ffmpegPath = require('ffmpeg-static'); // Menggunakan ffmpeg-static untuk kompatibilitas Linux/Railway
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -14,9 +15,6 @@ app.use((req, res, next) => {
     next();
 });
 
-// Tentukan lokasi file ffmpeg.exe di dalam folder Anda
-const ffmpegPath = path.join(__dirname, 'bin', 'ffmpeg.exe');
-
 app.post('/convert', upload.single('audioFile'), (req, res) => {
     if (!req.file) {
         return res.status(400).send("File audio tidak ditemukan.");
@@ -27,7 +25,7 @@ app.post('/convert', upload.single('audioFile'), (req, res) => {
     const speed = req.body.speed || '2.3';
     const gain = req.body.gain || '-6';
 
-    // Perintah menjalankan FFmpeg desktop asli
+    // Perintah menjalankan FFmpeg dari ffmpeg-static
     const cmd = `"${ffmpegPath}" -i "${inputPath}" -filter:a "atempo=${speed},volume=${gain}dB" -c:a libvorbis "${outputPath}"`;
 
     exec(cmd, (error, stdout, stderr) => {
@@ -45,6 +43,8 @@ app.post('/convert', upload.single('audioFile'), (req, res) => {
     });
 });
 
-app.listen(3000, () => {
-    console.log('Server backend berjalan di http://localhost:3000');
+// Menggunakan port dinamis dari Railway
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server backend berjalan di port ${PORT}`);
 });
