@@ -3,7 +3,7 @@ const multer = require('multer');
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const ffmpegPath = require('ffmpeg-static'); // Menggunakan ffmpeg-static untuk kompatibilitas Linux/Railway
+const ffmpegPath = require('ffmpeg-static');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -25,7 +25,6 @@ app.post('/convert', upload.single('audioFile'), (req, res) => {
     const speed = req.body.speed || '2.3';
     const gain = req.body.gain || '-6';
 
-    // Perintah menjalankan FFmpeg dari ffmpeg-static
     const cmd = `"${ffmpegPath}" -i "${inputPath}" -filter:a "atempo=${speed},volume=${gain}dB" -c:a libvorbis "${outputPath}"`;
 
     exec(cmd, (error, stdout, stderr) => {
@@ -43,7 +42,6 @@ app.post('/convert', upload.single('audioFile'), (req, res) => {
     });
 });
 
-// Menggunakan port dinamis dari Railway
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server backend berjalan di port ${PORT}`);
