@@ -78,8 +78,8 @@ app.post('/convert', upload.single('audioFile'), (req, res) => {
     });
 });
 
-// Port dinamis yang wajib untuk platform cloud seperti Railway
+// Menggunakan port dinamis Railway dan binding '0.0.0.0' agar terhindar dari SIGTERM
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server backend berjalan di port ${PORT}`);
 });
